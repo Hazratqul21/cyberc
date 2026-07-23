@@ -2,15 +2,23 @@ import { useEffect, useState } from 'react'
 import { PLAYBOOKS, PB_STATUS } from '../data/mockData.js'
 import Icon from '../components/Icon.jsx'
 
-const STAT_CARDS = [
-  { label: 'Bugun ishga tushdi', value: 47, color: '#4A9BD4' },
-  { label: 'Muvaffaqiyatli', value: 44, color: '#46A758' },
-  { label: 'Tasdiq kutmoqda', value: 2, color: '#FFB224' },
-  { label: "O'rtacha bajarilish", value: '4.2s', color: '#8FA3BF' },
-]
+// Tenant koeffitsientiga qarab statistikani hisoblaydi
+function statCards(mult) {
+  const launched = Math.max(3, Math.round(47 * mult))
+  const awaiting = Math.max(0, Math.round(2 * mult))
+  return [
+    { label: 'Bugun ishga tushdi', value: launched, color: '#4A9BD4' },
+    { label: 'Muvaffaqiyatli', value: launched - awaiting - (mult > 0.5 ? 1 : 0), color: '#46A758' },
+    { label: 'Tasdiq kutmoqda', value: awaiting, color: '#FFB224' },
+    { label: "O'rtacha bajarilish", value: (4.2 - mult * 0.6).toFixed(1) + 's', color: '#8FA3BF' },
+  ]
+}
 
 export default function Soar({ tenant }) {
   const [playbooks, setPlaybooks] = useState(PLAYBOOKS)
+  const stats = statCards(tenant.mult)
+  // Kichik mijozda kamroq playbook ko'rsatiladi
+  const visible = playbooks.slice(0, Math.max(3, Math.round(playbooks.length * Math.min(1, tenant.mult + 0.35))))
 
   // "Bajarilmoqda" playbook qadamlari sekin oldinga siljiydi
   useEffect(() => {
@@ -41,7 +49,7 @@ export default function Soar({ tenant }) {
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STAT_CARDS.map((s) => (
+        {stats.map((s) => (
           <div key={s.label} className="rounded-xl border border-line bg-navy/70 p-4">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">{s.label}</div>
             <div className="mt-1 font-mono text-[24px] font-bold" style={{ color: s.color }}>{s.value}</div>
@@ -53,7 +61,7 @@ export default function Soar({ tenant }) {
         <div className="grid min-w-[880px] grid-cols-[90px_1fr_1fr_170px_130px_80px] gap-3 border-b border-line bg-surface/60 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-ink-faint">
           <div>ID</div><div>Playbook</div><div>Trigger</div><div>Bajarilish</div><div>Status</div><div>Vaqt</div>
         </div>
-        {playbooks.map((p) => {
+        {visible.map((p) => {
           const st = PB_STATUS[p.status]
           const pct = Math.round((p.stepsDone / p.steps) * 100)
           return (

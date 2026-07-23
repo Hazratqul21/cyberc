@@ -23,7 +23,7 @@ export default function Glossary({ onClose }) {
             <h2 className="text-[14px] font-bold">Atamalar lug'ati</h2>
             <p className="text-[10px] text-ink-faint">Kiberxavfsizlik qisqartmalari va tushunchalari</p>
           </div>
-          <button onClick={onClose} className="rounded p-1.5 text-ink-faint hover:bg-surface hover:text-ink">
+          <button onClick={onClose} aria-label="Lug'atni yopish" className="rounded p-1.5 text-ink-faint hover:bg-surface hover:text-ink">
             <Icon name="x" size={16} />
           </button>
         </div>

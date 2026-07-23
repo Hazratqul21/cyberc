@@ -47,10 +47,11 @@ export default function AiAssistant({ onClose }) {
     setMessages((m) => [...m, { role: 'user', text: q }])
     setInput('')
     setTyping(true)
+    // Kechikish savol uzunligiga bog'liq — jonli tuyuladi, lekin deterministik
     setTimeout(() => {
       setMessages((m) => [...m, { role: 'ai', text: findAnswer(q) }])
       setTyping(false)
-    }, 1200 + Math.random() * 900)
+    }, 1100 + (q.length % 8) * 130)
   }
 
   return (
@@ -65,7 +66,7 @@ export default function AiAssistant({ onClose }) {
             <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-sev-low" /> Onlayn · barcha qatlamlarga ulangan
           </div>
         </div>
-        <button onClick={onClose} className="rounded p-1 text-ink-faint hover:bg-surface hover:text-ink">
+        <button onClick={onClose} aria-label="AI panelini yopish" className="rounded p-1 text-ink-faint hover:bg-surface hover:text-ink">
           <Icon name="x" size={16} />
         </button>
       </div>
@@ -111,7 +112,7 @@ export default function AiAssistant({ onClose }) {
             placeholder="Savol yozing..."
             className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-[12px] text-ink placeholder-ink-faint outline-none focus:border-accent/70"
           />
-          <button onClick={() => send()}
+          <button onClick={() => send()} aria-label="Savolni yuborish"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-white hover:bg-accent-bright disabled:opacity-40"
             disabled={typing}>
             <Icon name="send" size={16} />

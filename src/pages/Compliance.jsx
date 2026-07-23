@@ -11,7 +11,10 @@ const REPORTS = [
 ]
 
 export default function Compliance({ tenant }) {
-  const avg = Math.round(COMPLIANCE.reduce((s, c) => s + c.score, 0) / COMPLIANCE.length)
+  // Har bir mijozning muvofiqlik holati biroz farq qiladi (barqaror ofset — tenant id bo'yicha)
+  const offset = Math.round((tenant.mult - 0.5) * 8)
+  const rows = COMPLIANCE.map((c) => ({ ...c, score: Math.max(58, Math.min(99, c.score + offset)) }))
+  const avg = Math.round(rows.reduce((s, c) => s + c.score, 0) / rows.length)
 
   return (
     <div className="space-y-4">
@@ -30,7 +33,7 @@ export default function Compliance({ tenant }) {
         <div className="grid min-w-[840px] grid-cols-[1fr_180px_220px_110px_110px] gap-3 border-b border-line bg-surface/60 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-ink-faint">
           <div>Reglament / standart</div><div>Organ</div><div>Bajarilish</div><div>Controllar</div><div>So'nggi audit</div>
         </div>
-        {COMPLIANCE.map((c) => (
+        {rows.map((c) => (
           <div key={c.name} className="grid min-w-[840px] grid-cols-[1fr_180px_220px_110px_110px] items-center gap-3 border-b border-line/50 px-4 py-3.5 text-[12px] hover:bg-surface/50">
             <div className="font-medium text-ink">{c.name}</div>
             <div className="text-ink-dim">{c.org}</div>

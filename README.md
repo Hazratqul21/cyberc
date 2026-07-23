@@ -41,8 +41,10 @@ npm run preview
 ## Texnik stack
 
 - React 18 + Vite 6
-- TailwindCSS 4 (dizayn tokenlari `src/index.css` da)
+- TailwindCSS 4 (dizayn tokenlari `src/index.css` da, light mavzu CSS-var override orqali)
 - Recharts — grafiklar
+- `@fontsource` — fontlar paket ichida (internetsiz ham to'g'ri ko'rinadi)
+- ESLint + Prettier — `npm run lint`, `npm run format`
 - Mock data — `src/data/mockData.js` (setInterval bilan "jonli" yangilanadi)
 
 ## Sahifalar
@@ -55,25 +57,45 @@ npm run preview
 | SOAR | Playbooklar ro'yxati, avtomatik javob harakatlari, jonli progress |
 | Compliance | Reglamentlar jadvali progress-barlar bilan, hisobotlar, muddatlar |
 
-Qo'shimcha: yuqori panelda **multi-tenant tanlagich** (5 ta soxta mijoz — tanlanganda KPI
-raqamlari o'zgaradi) va o'ng tomonda **AI tahlilchi** chat paneli (oldindan yozilgan
-namunaviy javoblar, real LLM chaqiruvi yo'q).
+Qo'shimcha: yuqori panelda **multi-tenant tanlagich** (5 ta soxta mijoz — tanlanganda
+**barcha sahifalardagi** raqamlar `tenant.mult` koeffitsienti bo'yicha qayta hisoblanadi)
+va o'ng tomonda **AI tahlilchi** chat paneli (oldindan yozilgan namunaviy javoblar,
+real LLM chaqiruvi yo'q).
 
 ## Tuzilma
 
 ```
 src/
-  App.jsx               — asosiy layout va sahifa routing
-  index.css             — Tailwind + dizayn tokenlari + animatsiyalar
-  data/mockData.js      — barcha demo ma'lumotlar
+  App.jsx                    — layout, routing, boot holati, ErrorBoundary
+  main.jsx                   — kirish nuqtasi + lokal fontlar
+  index.css                  — Tailwind tokenlari (dark/light) + animatsiyalar
+  context/
+    ThemeContext.jsx         — ThemeProvider komponenti
+    themeStore.js            — useTheme hook + mavzuga bog'liq ranglar (CHART)
+  utils/rand.js              — deterministik psevdo-tasodifiy (render uchun xavfsiz)
+  data/
+    mockData.js              — barcha demo ma'lumotlar + atamalar lug'ati
+    uzMap.js                 — O'zbekiston SVG konturi (GeoJSON'dan generatsiya)
   components/
-    Sidebar.jsx         — chap navigatsiya
-    Topbar.jsx          — tenant tanlagich, soat, foydalanuvchi
-    AiAssistant.jsx     — AI chat paneli
+    Sidebar.jsx              — chap navigatsiya + atamalar lug'ati
+    Topbar.jsx               — tenant tanlagich, Toshkent soati, mavzu tugmasi
+    AiAssistant.jsx          — AI chat paneli
+    BootScreen.jsx           — kirish ekrani (Matrix kod yomg'iri, boot-log)
+    Glossary.jsx             — to'liq atamalar lug'ati (qidiruv bilan)
+    Icon.jsx                 — premium stroke ikonalar to'plami
+    Watermark.jsx            — "preliminary demo" ogohlantirishi
+    ErrorBoundary.jsx        — demo paytida oq ekranning oldini oladi
   pages/
-    Overview.jsx        — KPI + grafiklar
-    LiveAlerts.jsx      — jonli alert oqimi
-    ThreatMap.jsx       — hujum xaritasi
-    Soar.jsx            — playbooklar
-    Compliance.jsx      — muvofiqlik va hisobotlar
+    Overview.jsx             — KPI + grafiklar
+    LiveAlerts.jsx           — jonli oqim + alert tafsiloti (pauza tugmasi bilan)
+    ThreatMap.jsx            — hujum xaritasi
+    Soar.jsx                 — playbooklar
+    Compliance.jsx           — muvofiqlik va hisobotlar
 ```
+
+## Demo ko'rsatishdan oldin
+
+- Splash ekran sessiyada bir marta chiqadi. Qayta ko'rsatish uchun brauzer konsolida:
+  `sessionStorage.removeItem('kq-booted')` va sahifani yangilang.
+- Alert oqimini **Pauza** tugmasi bilan to'xtatib, bitta hodisani batafsil tushuntirish qulay.
+- Mavzu (dark/light) `localStorage`da saqlanadi — standart: dark.

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { TENANTS } from '../data/mockData.js'
-import { useTheme } from '../context/ThemeContext.jsx'
+import { useTheme } from '../context/themeStore.js'
 import Icon from './Icon.jsx'
 
 function ThemeToggle() {
@@ -22,10 +22,12 @@ function Clock() {
     const t = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
+  // Doim Toshkent vaqti — foydalanuvchi qaysi mamlakatda bo'lishidan qat'i nazar
+  const TZ = 'Asia/Tashkent'
   return (
     <div className="font-mono text-[12px] text-ink-dim">
-      {now.toLocaleDateString('uz-UZ')}{' '}
-      <span className="text-ink">{now.toLocaleTimeString('uz-UZ')}</span>
+      {now.toLocaleDateString('uz-UZ', { timeZone: TZ })}{' '}
+      <span className="text-ink">{now.toLocaleTimeString('uz-UZ', { timeZone: TZ })}</span>
       <span className="ml-1 text-ink-faint">UTC+5</span>
     </div>
   )

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { MAP_SOURCES } from '../data/mockData.js'
 import { UZ_PATH, MAP_CITIES } from '../data/uzMap.js'
+import { useTheme } from '../context/themeStore.js'
+import { rnd } from '../utils/rand.js'
 
 const NEIGHBORS = [
   { name: "QOZOG'ISTON", x: 300, y: 88 },
@@ -20,24 +22,38 @@ function randomAttacks(n = 7) {
   return list
 }
 
-const ATTACK_TYPES = [
+// Bazaviy qiymatlar — tenant koeffitsientiga ko'paytiriladi
+const ATTACK_BASE = [
   { type: 'DDoS', color: '#E5484D', count: 34 },
   { type: 'Brute-force', color: '#F76B15', count: 128 },
   { type: 'Port scan', color: '#FFB224', count: 412 },
   { type: 'Malware C2', color: '#4A9BD4', count: 17 },
 ]
 
+const TOTAL_BASE = 591
+
 export default function ThreatMap({ tenant }) {
+  const { chart } = useTheme()
   const [attacks, setAttacks] = useState(() => randomAttacks())
-  const [total, setTotal] = useState(591)
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     const t = setInterval(() => {
       setAttacks(randomAttacks(5 + Math.floor(Math.random() * 5)))
-      setTotal((v) => v + Math.floor(Math.random() * 9) + 1)
+      setTick((v) => v + 1)
     }, 3000)
     return () => clearInterval(t)
   }, [])
+
+  // Baseline atrofida tebranadi — cheksiz o'smaydi
+  const baseline = Math.max(12, Math.round(TOTAL_BASE * tenant.mult))
+  const total = Math.round(baseline * (0.97 + rnd(tick * 3.7) * 0.07))
+
+  const attackTypes = useMemo(
+    () => ATTACK_BASE.map((a) => ({ ...a, count: Math.max(1, Math.round(a.count * tenant.mult)) })),
+    [tenant],
+  )
+  const maxAttack = Math.max(...attackTypes.map((a) => a.count))
 
   const topCities = useMemo(
     () => [...MAP_CITIES].sort((a, b) => b.weight - a.weight).slice(0, 4),
@@ -63,7 +79,7 @@ export default function ThreatMap({ tenant }) {
             {/* Fon nuqta-to'ri */}
             <defs>
               <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
-                <circle cx="1" cy="1" r="1" fill="#24344F" />
+                <circle cx="1" cy="1" r="1" fill={chart.mapDots} />
               </pattern>
               <radialGradient id="uzGlow" cx="50%" cy="50%" r="60%">
                 <stop offset="0%" stopColor="#2E6F9E" stopOpacity="0.28" />
@@ -74,14 +90,14 @@ export default function ThreatMap({ tenant }) {
 
             {/* Qo'shni davlatlar yorlig'i */}
             {NEIGHBORS.map((n) => (
-              <text key={n.name} x={n.x} y={n.y} fill="#3A4E6E" fontSize="11" fontWeight="600" letterSpacing="2" textAnchor="middle">
+              <text key={n.name} x={n.x} y={n.y} fill={chart.mapDim} fontSize="11" fontWeight="600" letterSpacing="2" textAnchor="middle">
                 {n.name}
               </text>
             ))}
 
             {/* O'zbekiston konturi */}
             <path d={UZ_PATH} fill="url(#uzGlow)" stroke="#2E6F9E" strokeWidth="1.5" strokeLinejoin="round" />
-            <text x="355" y="192" fill="#8FA3BF" fontSize="14" fontWeight="700" letterSpacing="4" textAnchor="middle">
+            <text x="355" y="192" fill={chart.mapTitle} fontSize="14" fontWeight="700" letterSpacing="4" textAnchor="middle">
               O'ZBEKISTON
             </text>
 
@@ -108,8 +124,8 @@ export default function ThreatMap({ tenant }) {
             {MAP_CITIES.map((c) => (
               <g key={c.id}>
                 <circle cx={c.x} cy={c.y} r="3" fill="#4A9BD4" className="ping-ring" opacity="0.6" />
-                <circle cx={c.x} cy={c.y} r="3.5" fill="#4A9BD4" stroke="#0F1A2E" strokeWidth="1.5" />
-                <text x={c.x + 8} y={c.y + 4} fill="#B7C7DC" fontSize="10.5" fontWeight="600">{c.name}</text>
+                <circle cx={c.x} cy={c.y} r="3.5" fill="#4A9BD4" stroke={chart.mapNodeRing} strokeWidth="1.5" />
+                <text x={c.x + 8} y={c.y + 4} fill={chart.mapText} fontSize="10.5" fontWeight="600">{c.name}</text>
               </g>
             ))}
           </svg>
@@ -125,14 +141,14 @@ export default function ThreatMap({ tenant }) {
           <div className="rounded-xl border border-line bg-navy/70 p-4">
             <h3 className="mb-3 text-[12px] font-bold uppercase tracking-wider text-ink-faint">Hujum turlari (60 daq)</h3>
             <div className="space-y-3">
-              {ATTACK_TYPES.map((t) => (
+              {attackTypes.map((t) => (
                 <div key={t.type}>
                   <div className="mb-1 flex justify-between text-[12px]">
                     <span className="text-ink-dim">{t.type}</span>
                     <span className="font-mono font-semibold" style={{ color: t.color }}>{t.count}</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-surface">
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, t.count / 4.2)}%`, background: t.color }} />
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(t.count / maxAttack) * 100}%`, background: t.color }} />
                   </div>
                 </div>
               ))}
@@ -146,7 +162,7 @@ export default function ThreatMap({ tenant }) {
                 <div key={c.id} className="flex items-center gap-3 text-[12px]">
                   <span className="flex h-6 w-6 items-center justify-center rounded bg-surface font-mono text-[11px] font-bold text-accent-bright">{i + 1}</span>
                   <span className="flex-1 text-ink">{c.name}</span>
-                  <span className="font-mono text-[11px] text-ink-dim">{Math.round(c.weight * 87)} hujum</span>
+                  <span className="font-mono text-[11px] text-ink-dim">{Math.max(1, Math.round(c.weight * 87 * tenant.mult))} hujum</span>
                 </div>
               ))}
             </div>

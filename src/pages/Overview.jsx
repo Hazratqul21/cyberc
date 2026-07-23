@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, BarChart, Bar,
 } from 'recharts'
 import { BASE_KPI, HOURLY_EVENTS, SEVERITY_DIST, SOURCE_DIST } from '../data/mockData.js'
-import { useTheme } from '../context/ThemeContext.jsx'
+import { useTheme } from '../context/themeStore.js'
 import Icon from '../components/Icon.jsx'
+import { rnd } from '../utils/rand.js'
 
 const fmt = (n) => n.toLocaleString('uz-UZ').replace(/,/g, ' ')
 
@@ -49,22 +50,24 @@ export default function Overview({ tenant }) {
     background: chart.tipBg, border: `1px solid ${chart.tipBorder}`, borderRadius: 8,
     fontSize: 12, color: chart.tipText,
   }
-  const [kpi, setKpi] = useState(BASE_KPI)
-
-  // Tenant almashganda va har 5 soniyada raqamlar "jonli" o'zgaradi
+  // Har 5 soniyada "tick" oshadi — KPI raqamlari shundan hisoblanadi (jonli taassurot)
+  const [tick, setTick] = useState(0)
   useEffect(() => {
-    const compute = () => ({
-      activeAlerts: Math.round(BASE_KPI.activeAlerts * tenant.mult * (0.97 + Math.random() * 0.06)),
-      endpoints: Math.round(BASE_KPI.endpoints * tenant.mult),
-      openIncidents: Math.max(1, Math.round(BASE_KPI.openIncidents * tenant.mult * (0.9 + Math.random() * 0.2))),
-      compliance: Math.min(99, Math.round(BASE_KPI.compliance + (tenant.mult - 0.5) * 6)),
-      blockedToday: Math.round(BASE_KPI.blockedToday * tenant.mult * (0.97 + Math.random() * 0.06)),
-      mttr: Math.max(4, Math.round(BASE_KPI.mttr * (0.9 + Math.random() * 0.25))),
-    })
-    setKpi(compute())
-    const t = setInterval(() => setKpi(compute()), 5000)
+    const t = setInterval(() => setTick((v) => v + 1), 5000)
     return () => clearInterval(t)
-  }, [tenant])
+  }, [])
+
+  const kpi = useMemo(() => {
+    const j = (i) => 0.97 + rnd(tick * 7 + i) * 0.06
+    return {
+      activeAlerts: Math.round(BASE_KPI.activeAlerts * tenant.mult * j(1)),
+      endpoints: Math.round(BASE_KPI.endpoints * tenant.mult),
+      openIncidents: Math.max(1, Math.round(BASE_KPI.openIncidents * tenant.mult * (0.9 + rnd(tick * 7 + 2) * 0.2))),
+      compliance: Math.min(99, Math.round(BASE_KPI.compliance + (tenant.mult - 0.5) * 6)),
+      blockedToday: Math.round(BASE_KPI.blockedToday * tenant.mult * j(3)),
+      mttr: Math.max(4, Math.round(BASE_KPI.mttr * (0.9 + rnd(tick * 7 + 4) * 0.25))),
+    }
+  }, [tenant, tick])
 
   return (
     <div className="space-y-5">
@@ -132,7 +135,7 @@ export default function Overview({ tenant }) {
                 {SEVERITY_DIST.map((s) => <Cell key={s.name} fill={s.color} />)}
               </Pie>
               <Tooltip contentStyle={tooltipStyle} />
-              <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ color: '#8FA3BF', fontSize: 11 }}>{v}</span>} />
+              <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ color: chart.legend, fontSize: 11 }}>{v}</span>} />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-2 border-t border-line pt-3">
